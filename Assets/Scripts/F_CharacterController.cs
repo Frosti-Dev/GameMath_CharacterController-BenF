@@ -33,6 +33,7 @@ public class F_CharacterController : MonoBehaviour
     public Transform Mpostion;
     public Camera playerCamera;
     public CharacterController playerController;
+    public GameObject playerBody;
     private Vector3 playerVelocity;
 
     //state of self... 
@@ -72,16 +73,17 @@ public class F_CharacterController : MonoBehaviour
         transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * rotationSpeed, 0);
 
         // Up/Down Look
-        currentY -= Input.GetAxis("Mouse Y") * rotationSpeed;
-        currentY = Mathf.Clamp(currentY, minVerticalAngle, maxVerticalAngle);
+        currentX -= Input.GetAxis("Mouse Y") * rotationSpeed;
+        currentX = Mathf.Clamp(currentX, minVerticalAngle, maxVerticalAngle);
+        playerCamera.transform.localRotation = Quaternion.Euler(currentX, 0, 0);
 
-        Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
+        //Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
 
-        Vector3 negDistance = new Vector3(0.0f, 0.0f, -distance);
-        Vector3 position = rotation * negDistance + transform.position;
+        //Vector3 negDistance = new Vector3(0.0f, 0.0f, -distance);
+        //Vector3 position = rotation * negDistance + transform.position;
 
-        transform.position = position;
-        //transform.rotation = rotation; //breaks the y rotation but fixes x rotation?
+        //transform.position = position;
+        //transform.rotation = rotation; //breaks the x rotation but fixes y rotation?
     }
 
     // Update is called once per frame
@@ -102,9 +104,9 @@ public class F_CharacterController : MonoBehaviour
 
         if (move != Vector3.zero)
         {
-            transform.position = move;
-            //Vector3 target.transform.forward =  10 ;
-            //transform.position = Vector3.MoveTowards(transform.position, target.transform.position, speed * Time.deltaTime);
+            //transform.position = move;
+            Vector3 target = new Vector3(transform.position.x, transform.position.y + 10, transform.position.z);
+            move = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
         }
 
         if (jumpAction.action.triggered && isGrounded)
