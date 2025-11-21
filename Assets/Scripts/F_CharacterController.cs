@@ -33,7 +33,7 @@ public class F_CharacterController : MonoBehaviour
     public Transform Mpostion;
     public Camera playerCamera;
     public CharacterController playerController;
-    public GameObject playerBody;
+    public Transform targetObject;
     private Vector3 playerVelocity;
 
     //state of self... 
@@ -72,18 +72,10 @@ public class F_CharacterController : MonoBehaviour
         // Left / Right Look
         transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * rotationSpeed, 0);
 
-        // Up/Down Look
+        // Up / Down Look
         currentX -= Input.GetAxis("Mouse Y") * rotationSpeed;
         currentX = Mathf.Clamp(currentX, minVerticalAngle, maxVerticalAngle);
         playerCamera.transform.localRotation = Quaternion.Euler(currentX, 0, 0);
-
-        //Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
-
-        //Vector3 negDistance = new Vector3(0.0f, 0.0f, -distance);
-        //Vector3 position = rotation * negDistance + transform.position;
-
-        //transform.position = position;
-        //transform.rotation = rotation; //breaks the x rotation but fixes y rotation?
     }
 
     // Update is called once per frame
@@ -102,10 +94,12 @@ public class F_CharacterController : MonoBehaviour
         Vector3 move = new Vector3(input.x, 0, input.y);
         move = Vector3.ClampMagnitude(move, 1f);
 
+        speed = Mathf.MoveTowards(speed, baseSpeed, acceleration * Time.deltaTime);
+
         if (move != Vector3.zero)
-        {
-            //transform.position = move;
-            Vector3 target = new Vector3(transform.position.x, transform.position.y + 10, transform.position.z);
+        { 
+            Vector3 target = new Vector3(targetObject.transform.position.x, targetObject.transform.position.y, targetObject.transform.position.z);
+            //transform.LookAt(target);
             move = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
         }
 
@@ -113,9 +107,10 @@ public class F_CharacterController : MonoBehaviour
         {
             playerVelocity.y = Mathf.Sqrt(jumpHeight * -2f);
         }
-        
-        Vector3 finalMove = (move * speed) + (playerVelocity.y * Vector3.up);
-        playerController.Move(finalMove * Time.deltaTime);
+
+        //Vector3 finalMove = (move * speed);
+
+        playerController.Move(move * Time.deltaTime);
         
     }
 }
