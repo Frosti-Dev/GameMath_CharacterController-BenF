@@ -1,3 +1,4 @@
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -15,7 +16,7 @@ public class F_CharacterController : MonoBehaviour
     public float speed = 5f;
     public float jumpHeight = 5f;
     public float rotationSpeed = 5f;
-    public float distance = 0f;
+    public float gravityValue = 9.81f;
 
     [Header("Acceleration Settings")]
     public float baseSpeed;
@@ -33,21 +34,20 @@ public class F_CharacterController : MonoBehaviour
     public Transform Mpostion;
     public Camera playerCamera;
     public CharacterController playerController;
-    public Transform targetObject;
-    private Vector3 playerVelocity;
+    private Vector3 targetPosition;
+    public Vector3 jumpVelocity;
+
 
     //state of self... 
     private bool isRunning;
     private bool canJump;
-    private bool isGrounded;
-
-    [Header("Input Actions")]
-    public InputActionReference moveAction; 
-    public InputActionReference jumpAction;
+    public bool isGrounded;
 
     private void Start()
     {
         speed = baseSpeed;
+
+        targetPosition = transform.position;
 
         Vector3 angles = transform.eulerAngles;
         currentX = angles.y;
@@ -55,17 +55,6 @@ public class F_CharacterController : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
     }
-
-    //private void LateUpdate()
-    //{
-    //    Quaternion rotation = Quaternion.Euler(currentY, currentX, 0);
-
-    //    Vector3 negDistance = new Vector3(0.0f, 0.0f, -distance);
-    //    Vector3 position = rotation * negDistance + transform.position;
-
-    //    transform.position = position;
-    //    transform.rotation = rotation;
-    //}
 
     private void MouseMovement()
     {
@@ -84,76 +73,45 @@ public class F_CharacterController : MonoBehaviour
         MouseMovement();
         isGrounded = playerController.isGrounded;
 
-        if (isGrounded && playerVelocity.y < 0)
-        {
-            playerVelocity.y = 0f;
-        }
-
         //reads input
-        Vector2 input = moveAction.action.ReadValue<Vector2>();
-        Vector3 move = new Vector3(input.x, 0, input.y);
-        move = Vector3.ClampMagnitude(move, 1f);
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
 
-        speed = Mathf.MoveTowards(speed, baseSpeed, acceleration * Time.deltaTime);
+        Vector3 moveDirection = transform.right * horizontalInput + transform.forward * verticalInput;
 
-        if (move != Vector3.zero)
-        { 
-            Vector3 target = new Vector3(targetObject.transform.position.x, targetObject.transform.position.y, targetObject.transform.position.z);
-            //transform.LookAt(target);
-            move = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
-        }
+        speed = Mathf.MoveTowards(speed, maxSpeed, acceleration * Time.deltaTime);
 
-        if (jumpAction.action.triggered && isGrounded)
+        if (moveDirection != Vector3.zero)
         {
-            playerVelocity.y = Mathf.Sqrt(jumpHeight * -2f);
+            targetPosition = transform.position + moveDirection * speed; // Update target based on input
+
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+
         }
 
-        //Vector3 finalMove = (move * speed);
-
-        playerController.Move(move * Time.deltaTime);
-        
-    }
-}
-
-
-
-
-/*
- * [SerializeField] Transform target;
-    [SerializeField] float followRange;
- 
-    [SerializeField] float baseSpeed;
-    [SerializeField] float maxSpeed;
-    float speed;
- 
-    [SerializeField] float acceleration;
-    [SerializeField] float deceleration;
- 
-    private void Start()
-    {
-        speed = baseSpeed;
-    }
- 
-    void Update()
-    {
-        //distance between game objects position (gameobject that this script is on) & target Posiotion
-        float distToTarget = Vector3.Distance(transform.position, target.position);
- 
-        if (distToTarget <= followRange)
-        {
-            transform.LookAt(target);
- 
-            speed = Mathf.MoveTowards(speed, maxSpeed, acceleration * Time.deltaTime);
- 
-            //Vector3.MoveTowards
-            transform.position = Vector3.MoveTowards(transform.position, target.transform.position, speed * Time.deltaTime); //1 is a magic number
-        }
         else
         {
             speed = Mathf.MoveTowards(speed, baseSpeed, deceleration * Time.deltaTime);
-            transform.Translate(transform.forward * speed * Time.deltaTime, Space.World);
- 
         }
-    }
 
-*/
+        //jump mechanics
+
+        //if (!isGrounded && jumpVelocity.y < 0)
+        //{
+        //    jumpVelocity.y = -2f; 
+        //}
+
+        //if (Input.GetButtonDown("Jump") && isGrounded) 
+        //{
+        //    jumpVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravityValue);
+        //}
+
+        
+
+        //jumpVelocity.y += gravityValue * Time.deltaTime;
+
+        //playerController.Move(jumpVelocity * Time.deltaTime);
+
+
+    }
+}
