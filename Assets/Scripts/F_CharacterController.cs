@@ -96,21 +96,21 @@ public class F_CharacterController : MonoBehaviour
 
         //jump mechanics
 
-        //if (!isGrounded && jumpVelocity.y < 0)
+        //if (!playerController.isGrounded)
         //{
-        //    jumpVelocity.y = -2f; 
+        //    moveDirection.y -= gravityValue * Time.deltaTime;
         //}
 
-        //if (Input.GetButtonDown("Jump") && isGrounded) 
+        //if (playerController.velocity.y < -1 && playerController.isGrounded)
         //{
-        //    jumpVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravityValue);
+        //    moveDirection.y = 0;
         //}
+            
 
-        
-
-        //jumpVelocity.y += gravityValue * Time.deltaTime;
-
-        //playerController.Move(jumpVelocity * Time.deltaTime);
+        //if (Input.GetButtonDown("Jump"))
+        //{
+        //    moveDirection.y = jumpHeight;
+        //}
 
 
     }
