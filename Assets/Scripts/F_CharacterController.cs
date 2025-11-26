@@ -60,6 +60,8 @@ public class F_CharacterController : MonoBehaviour
     {
         speed = baseSpeed;
 
+        canSprint = true;
+
         targetPosition = transform.position;
 
         Vector3 angles = transform.eulerAngles;
@@ -153,7 +155,7 @@ public class F_CharacterController : MonoBehaviour
             moveDirection.y = 0;
         }
 
-        
+        playerController.Move(moveDirection);
 
 
         if (Input.GetKeyDown(KeyCode.Space))
