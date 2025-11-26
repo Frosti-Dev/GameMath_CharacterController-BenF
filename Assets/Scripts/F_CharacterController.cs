@@ -2,6 +2,7 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 using UnityEngine.Rendering;
 using static UnityEngine.GraphicsBuffer;
 
@@ -20,9 +21,12 @@ public class F_CharacterController : MonoBehaviour
 
     [Header("Acceleration Settings")]
     public float baseSpeed;
+    public float sprintMaxSpeed;
+    public float crouchMaxSpeed;
     public float maxSpeed;
     public float acceleration;
     public float deceleration;
+
 
     //camera angles
     private float minVerticalAngle = -60f; //max distance you can look down
@@ -31,17 +35,26 @@ public class F_CharacterController : MonoBehaviour
     private float currentY = 0f;
 
     [Header("Components")]
-    public Transform Mpostion;
+    public Transform mPostion;
     public Camera playerCamera;
+    public GameObject cameraPosition;
     public CharacterController playerController;
-    private Vector3 targetPosition;
+    public Vector3 targetPosition;
     public Vector3 jumpVelocity;
 
 
     //state of self... 
-    private bool isRunning;
-    private bool canJump;
+    public bool isRunning;
+    private bool canSprint;
+    public bool isCrouching;
     public bool isGrounded;
+
+    [Header("Heights")]
+    public float normalHeight = 1.0f; 
+    public Vector3 normalCenter = new Vector3(0, 1.0f, 0);
+    public float crouchHeight = 0.4f;
+    public Vector3 crouchCenter = new Vector3(0, 0.5f, 0);
+
 
     private void Start()
     {
@@ -71,6 +84,7 @@ public class F_CharacterController : MonoBehaviour
     void Update()
     {
         MouseMovement();
+        
         isGrounded = playerController.isGrounded;
 
         //reads input
@@ -78,40 +92,127 @@ public class F_CharacterController : MonoBehaviour
         float verticalInput = Input.GetAxis("Vertical");
 
         Vector3 moveDirection = transform.right * horizontalInput + transform.forward * verticalInput;
+        Vector3 move = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
 
-        speed = Mathf.MoveTowards(speed, maxSpeed, acceleration * Time.deltaTime);
+        //speed states
+        if (isRunning)
+        {
+            speed = Mathf.MoveTowards(speed, sprintMaxSpeed, acceleration * Time.deltaTime);
+        }
+
+        else if (isCrouching)
+        {
+            speed = Mathf.MoveTowards(speed, crouchMaxSpeed, acceleration * Time.deltaTime);
+        }
+
+        else
+        {
+            speed = Mathf.MoveTowards(speed, maxSpeed, acceleration * Time.deltaTime);
+        }
+
 
         if (moveDirection != Vector3.zero)
         {
-            targetPosition = transform.position + moveDirection * speed; // Update target based on input
+            targetPosition = transform.position + moveDirection * speed;
 
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+
+
+            transform.position = move;
 
         }
 
         else
         {
+            targetPosition = Vector3.zero * Time.deltaTime;
             speed = Mathf.MoveTowards(speed, baseSpeed, deceleration * Time.deltaTime);
+        }
+
+        
+
+        //sprint mechanics
+        
+        if (Input.GetKey(KeyCode.LeftShift) && canSprint)
+        {
+            isRunning = true;
+        }
+
+        else
+        {
+            isRunning = false;
         }
 
         //jump mechanics
 
-        //if (!playerController.isGrounded)
-        //{
-        //    moveDirection.y -= gravityValue * Time.deltaTime;
-        //}
+        if (!isGrounded)
+        {
+            moveDirection.y -= gravityValue * Time.deltaTime;
+        }
 
-        //if (playerController.velocity.y < -1 && playerController.isGrounded)
-        //{
-        //    moveDirection.y = 0;
-        //}
+        if (playerController.velocity.y < -1 && isGrounded)
+        {
+            moveDirection.y = 0;
+        }
+
+        
+
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            isGrounded = false;
+            moveDirection.y = jumpHeight;
+        }
+
+        //crouch mechanics
+
+        if (Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            ToggleCrouch();
+        }
+
+
+        if (Input.GetKeyUp(KeyCode.LeftControl) && isCrouching)
+        {
+            ToggleCrouch();
+        }
+
+        
+        //Vector3 finalMove = (move * speed) ; 
+        //playerController.Move(finalMove * Time.deltaTime);
+
+        ////(jumpVelocity.y * Vector3.up);
+    }
+
+    void ToggleCrouch()
+    {
+        Vector3 standingCamera = new Vector3(cameraPosition.transform.position.x, 2, cameraPosition.transform.position.z);
+        Vector3 crouchCamera = new Vector3(cameraPosition.transform.position.x, 1, cameraPosition.transform.position.z);
+
+        isCrouching = !isCrouching;
+
+        if (isCrouching)
+        {
+            canSprint = false;
+   
+            cameraPosition.transform.position = crouchCamera;
+            playerController.height = crouchHeight;
+            playerController.center = crouchCenter;
             
+        }
+        else
+        {
+            canSprint = true;
+            cameraPosition.transform.position = standingCamera;
+            playerController.height = normalHeight;
+            playerController.center = normalCenter;
+                
+        }
+    }
 
-        //if (Input.GetButtonDown("Jump"))
-        //{
-        //    moveDirection.y = jumpHeight;
-        //}
-
-
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+        }
     }
 }
