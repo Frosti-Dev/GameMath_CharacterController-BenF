@@ -18,6 +18,7 @@ public class F_CharacterController : MonoBehaviour
     public float jumpHeight = 5f;
     public float rotationSpeed = 5f;
     public float gravityValue = 9.81f;
+    public float crouchTransitionSpeed = 6f;
 
     [Header("Acceleration Settings")]
     public float baseSpeed;
@@ -50,11 +51,13 @@ public class F_CharacterController : MonoBehaviour
     public bool isGrounded;
 
     [Header("Heights")]
-    public float normalHeight = 1.0f; 
+    public float normalHeight = 2.0f; 
     public Vector3 normalCenter = new Vector3(0, 1.0f, 0);
-    public float crouchHeight = 0.4f;
+    public float crouchHeight = 1f;
     public Vector3 crouchCenter = new Vector3(0, 0.5f, 0);
 
+    private float currentHeight;
+    private Vector3 originalCenter;
 
     private void Start()
     {
@@ -67,6 +70,9 @@ public class F_CharacterController : MonoBehaviour
         Vector3 angles = transform.eulerAngles;
         currentX = angles.y;
         currentY = angles.x;
+
+        originalCenter = playerController.center;
+        currentHeight = normalHeight;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -112,6 +118,7 @@ public class F_CharacterController : MonoBehaviour
             speed = Mathf.MoveTowards(speed, maxSpeed, acceleration * Time.deltaTime);
         }
 
+        //move mechanics
 
         if (moveDirection != Vector3.zero)
         {
@@ -145,24 +152,20 @@ public class F_CharacterController : MonoBehaviour
 
         //jump mechanics
 
-        if (!isGrounded)
-        {
-            moveDirection.y -= gravityValue * Time.deltaTime;
-        }
+        
+        moveDirection.y -= gravityValue * Time.deltaTime;
+        
 
         if (playerController.velocity.y < -1 && isGrounded)
         {
-            moveDirection.y = 0;
+            moveDirection.y = -1;
         }
 
-        playerController.Move(moveDirection);
-
-
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            isGrounded = false;
             moveDirection.y = jumpHeight;
         }
+
 
         //crouch mechanics
 
@@ -177,44 +180,43 @@ public class F_CharacterController : MonoBehaviour
             ToggleCrouch();
         }
 
-        
-        //Vector3 finalMove = (move * speed) ; 
-        //playerController.Move(finalMove * Time.deltaTime);
+        //final movements
 
-        ////(jumpVelocity.y * Vector3.up);
+        Vector3 finalMove = (moveDirection * speed) + (playerController.velocity.y * Vector3.up);
+        playerController.Move(finalMove * Time.deltaTime);
+
+
     }
 
     void ToggleCrouch()
     {
-        Vector3 standingCamera = new Vector3(cameraPosition.transform.position.x, 2, cameraPosition.transform.position.z);
-        Vector3 crouchCamera = new Vector3(cameraPosition.transform.position.x, 1, cameraPosition.transform.position.z);
+
+        Vector3 crouchingCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + 0.5f), cameraPosition.transform.position.z);
+        Vector3 normalCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + 1), cameraPosition.transform.position.z);
+
 
         isCrouching = !isCrouching;
 
         if (isCrouching)
         {
             canSprint = false;
-   
-            cameraPosition.transform.position = crouchCamera;
-            playerController.height = crouchHeight;
-            playerController.center = crouchCenter;
-            
+
+            currentHeight = Mathf.Lerp(currentHeight, crouchHeight, crouchTransitionSpeed * Time.deltaTime);
+            playerController.height = currentHeight;
+            playerController.center = new Vector3(originalCenter.x, crouchCenter.y, originalCenter.z);
+            cameraPosition.transform.position = crouchingCamera;
+
+
         }
         else
         {
             canSprint = true;
-            cameraPosition.transform.position = standingCamera;
-            playerController.height = normalHeight;
-            playerController.center = normalCenter;
-                
-        }
-    }
 
-    private void OnCollisionStay(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
+            currentHeight = Mathf.Lerp(currentHeight, normalHeight, crouchTransitionSpeed * Time.deltaTime);
+            playerController.height = currentHeight;
+            playerController.center = originalCenter;
+            cameraPosition.transform.position = normalCamera;
+
         }
     }
 }
