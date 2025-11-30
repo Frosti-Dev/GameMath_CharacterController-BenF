@@ -15,10 +15,10 @@ public class F_CharacterController : MonoBehaviour
 
     [Header("Base Settings")]
     public float speed = 5f;
-    public float jumpHeight = 5f;
+    public float jumpHeight = 2.5f;
     public float rotationSpeed = 5f;
     public float gravityValue = 9.81f;
-    public float crouchTransitionSpeed = 6f;
+    private float crouchTransitionSpeed = 2f;
 
     [Header("Acceleration Settings")]
     public float baseSpeed;
@@ -36,7 +36,6 @@ public class F_CharacterController : MonoBehaviour
     private float currentY = 0f;
 
     [Header("Components")]
-    public Transform mPostion;
     public Camera playerCamera;
     public GameObject cameraPosition;
     public CharacterController playerController;
@@ -44,13 +43,15 @@ public class F_CharacterController : MonoBehaviour
     public Vector3 jumpVelocity;
 
 
-    //state of self... 
+    [Header("State of Self")]
     public bool isRunning;
-    private bool canSprint;
     public bool isCrouching;
     public bool isGrounded;
+    private bool canSprint;
 
     [Header("Heights")]
+    public float cameraCrouchHeight = 0.3f;
+    public float cameraNormalHeight = 1f;
     public float normalHeight = 2.0f; 
     public Vector3 normalCenter = new Vector3(0, 1.0f, 0);
     public float crouchHeight = 1f;
@@ -59,6 +60,7 @@ public class F_CharacterController : MonoBehaviour
     private float currentHeight;
     private Vector3 originalCenter;
 
+    //Sets all base statistics
     private void Start()
     {
         speed = baseSpeed;
@@ -77,6 +79,7 @@ public class F_CharacterController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
+    //camera movement
     private void MouseMovement()
     {
         // Left / Right Look
@@ -191,8 +194,8 @@ public class F_CharacterController : MonoBehaviour
     void ToggleCrouch()
     {
 
-        Vector3 crouchingCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + 0.5f), cameraPosition.transform.position.z);
-        Vector3 normalCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + 1), cameraPosition.transform.position.z);
+        Vector3 crouchingCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + cameraCrouchHeight), cameraPosition.transform.position.z);
+        Vector3 normalCamera = new Vector3(cameraPosition.transform.position.x, (transform.position.y + cameraNormalHeight), cameraPosition.transform.position.z);
 
 
         isCrouching = !isCrouching;
@@ -203,7 +206,7 @@ public class F_CharacterController : MonoBehaviour
 
             currentHeight = Mathf.Lerp(currentHeight, crouchHeight, crouchTransitionSpeed * Time.deltaTime);
             playerController.height = currentHeight;
-            playerController.center = new Vector3(originalCenter.x, crouchCenter.y, originalCenter.z);
+            //playerController.center = new Vector3(originalCenter.x, crouchCenter.y, originalCenter.z);  //causes springing effect
             cameraPosition.transform.position = crouchingCamera;
 
 
@@ -214,9 +217,9 @@ public class F_CharacterController : MonoBehaviour
 
             currentHeight = Mathf.Lerp(currentHeight, normalHeight, crouchTransitionSpeed * Time.deltaTime);
             playerController.height = currentHeight;
-            playerController.center = originalCenter;
+            //playerController.center = originalCenter; //causes springing effect
             cameraPosition.transform.position = normalCamera;
-
+            
         }
     }
 }
